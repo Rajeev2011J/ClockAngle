@@ -1,51 +1,26 @@
-﻿using System;
+#region "Import Namespaces"
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+#endregion
 
 namespace ClockAngle.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class ClockController : ControllerBase
-    {
-        /*********************************************************************************************************************************************
-        Q.How will you deploy this solution(in code or as a todo list if time is limited). i.e.how and where will this run?
+    {    
 
-        Ans: This is API project developed in .NET Core. This can be deplyoed as webapp on cloud services.
-        In Azure we can create web app and then deploy this as service . The URL of this API can be consumed by the client applciations.
-        In Onpremise scenarion it can be hosted on IIS.
-
-
-        Q.How will you manage any infrastructure needed?
-        
-        Ans:In Azure , we can create one resource group based on project need, enterprise policies. Under this resource group we
-        can create the required resources. e.g For hosting such API we would need Azure web app service. We need to manage this service.
-        As this is PAAS service no infrastructure is involved as such. In real project scenarios we end up creating multiple services on cloud
-        and those needs to be adminstrerd from cost perspecive.
-
-
-
-       I have implemented SWAGGER so this can be tested by executing . It provide UI from where we can test.
-       Same applciation can be publised from visual studio to any azure subscription web app service.
-
-        *******************************************************************************************************************************************************/
-
-        /// <summary>
-        /// This is api method which will be consumed by client application.
-        /// </summary>
-        /// <param name="timevalue">Timestamp value for which angel needs to be determined.</param>
-        /// <returns></returns>
         [HttpGet]
-        public IActionResult Get(string timevalue)
+        public IActionResult Get(double h, double m)
         {
             try
             {
-               return Ok("The calcualted angle is " +  GetAngle(timevalue).ToString() + " degrees.");
+               return Ok("The calcualted angle is " + calcAngle(h,m).ToString());
             }
             catch (Exception ex)
             {
@@ -54,45 +29,44 @@ namespace ClockAngle.Controllers
            
         }
 
+        #region "calcAngle"
         /// <summary>
-        /// Thie method takes the time string value as input and returns the calculted degree value.
+        /// This method takes the hour and Mins value as input and returns the calculted angles value
         /// </summary>
-        /// <param name="timevalue">A string containing timestamp.e.g. 03:30</param>
-        /// <returns></returns>
-        private int GetAngle(string timevalue)
+        /// <param name="h">hours</param>
+        /// <param name="m">mins</param>
+        /// <returns>angles</returns>
+        private int calcAngle(double h, double m)
         {
-            //1. Get the values of Hour & Minute from intput string
-            //2, Determine the relative position of hour and minute hands.
-            //3. Determine the angle.
-            //To DO: {24 Hrs format can be implmented in validation}.
+            // validate the input
+            if (h < 0 || m < 0 ||
+                h > 12 || m > 60)
+                Console.Write("Wrong input");
 
-            string[] timesplit = timevalue.Split(":");
-            int angleDegree = 0;
+            if (h == 12)
+                h = 0;
 
-            try
+            if (m == 60)
             {
-                int hourValue = Convert.ToInt16(timesplit[0]);
-                int minuteValue = Convert.ToInt16(timesplit[1]);
-                if (hourValue <= 12 && minuteValue <= 60)
-                {
-                    int hourPosition = hourValue * 5;
-                    int hourDelta = minuteValue / 12;
-                    hourPosition = hourPosition + hourDelta;
-
-                    if (minuteValue >= hourPosition)
-                        angleDegree = (minuteValue - hourPosition) * 6;
-                    else
-                        angleDegree = (hourPosition - minuteValue) * 6;
-
-                    return angleDegree;
-                }
-                else
-                    throw new Exception("Invalid Hour or Minute value");
+                m = 0;
+                h += 1;
+                if (h > 12)
+                    h = h - 12;
             }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+
+            // Calculate the angles moved by hour and minute hands with reference to 3:00
+            int hour_angle = (int)(0.5 * (h * 60 + m));
+            int minute_angle = (int)(6 * m);
+
+            // Find the difference between two angles
+            int angle = Math.Abs(hour_angle - minute_angle);
+
+            // smaller angle of two possible angles
+            angle = Math.Min(360 - angle, angle);
+
+            return angle;
         }
+
+        #endregion
     }
 }
